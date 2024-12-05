@@ -1,0 +1,176 @@
+ECM1400 Battleships Frontend Connection Guide
+Intro
+main.html
+placement.html
+Tasks
+Documentation
+placement.html (at route /placement)
+When there is a GET Request to /placement
+Expected parameters when rendering placement.html
+How to render the template with parameters
+When there is a POST Request to /placement
+Incoming Object
+How to get the object
+How to respond
+main.html (at route /)
+When there is a GET Request to /
+Expected parameter when rendering main.html
+How to render the template with parameters
+Route /attack
+When there is a GET Request to /attack
+Request Arguments
+How to access the request arguments in \attack
+Responding to the template
+Example Reponses
+Intro
+The frontend for the Battleships CA consists of 2 template files.
+
+These should be store in a templates folder in the root of your project
+
+main.html
+provides the grid for receiving the attacks of a human player.
+provides a smaller grid for displaying the players board and the attacks that the AI has done
+A Message log which details the AI's turn
+placement.html
+A single grid for the player to place their battleships
+A button to send the board to the python flask backend
+Tasks
+To use the templates you need to implement the following in a module name main.py:
+
+A method placement_interface() which has a route /placement
+This method should accept GET and POST request
+In the case of a GET request the method should return/render the placement.html template passing the required parameters
+In the case of a POST request it should handle the incoming data and interact with your battleships game logic and return a success message.
+A method root which has a route /
+This method should accept GET requests
+In the case of a GET request the method should return/render the main.html passing the required parameters
+A method process_attack which has a route /attack
+This method should accept GET requests
+In the case of a GET request the method will receive two arguments and X and Y coordinate which will correspond to the location clicked by the player.
+You should retrieve these coordinates and then use them to interact with your game logic.
+You should then respond to the request
+Documentation
+When using flask you add routes to a function using the @app.route decorator. This is covered in the workshops and an example is given below on how to add the ability to receive GET and POST requests
+
+@app.route('/ExampleRoute', methods=['GET', 'POST'])
+You will also need to import the following Flask functionality. 
+render_template, jsonify, request.
+
+from flask import Flask, render_template, jsonify, request
+placement.html (at route /placement)
+When there is a GET Request to /placement
+When a get request is sent to /placement you should render the placement.html template.
+
+The template is expecting to receive two parameters.
+
+Expected parameters when rendering placement.html
+ships = A dictionary of {shipname_1:shiplength_1} with the same format that is returned from your create_battleships() function.
+
+board_size = An integer for a given board size i.e. 10
+
+How to render the template with parameters
+This code renders the template and passes some example parameters Note: You should change these parameters
+
+return render_template('placement.html', ships={'Cruiser': 3, 'Submarine': 3}
+, board_size=10)
+
+When there is a POST Request to /placement
+A POST request to /placement is triggered when the user presses the send board button on the Placement.html screen, and will send with it a data JSON object.
+
+The template then expects a response.
+
+Incoming Object
+The incoming object will be a JSON object and matches the format of the placement.json example (on ele) Is a dictionary of shipname:[x_coord, y_coord, orientation]
+
+Where:
+
+x_coord is the starting x position of the ship
+y_coord is the starting y position of the ship
+orientation is either "h" for a horizontal ship or "v" for a vertical ship
+Example incoming object:
+
+{'Aircraft_Carrier': ['3', '1', 'h'],
+  'Battleship': ['3', '4', 'h'],
+  'Cruiser': ['4', '7', 'h'],
+  'Submarine': ['2', '8', 'h'],
+  'Destroyer': ['2', '6', 'h']
+  }
+How to get the object
+In your placement_interface method with route placement You can receive the JSON object detailed and convert it to a python dictionary using the code below.
+
+You should then use that dictionary to interact with your game logic.
+
+if request.method == 'POST':
+    data = request.get_json()
+    # data = the dictonary contianing the values, (example above)
+How to respond
+Before moving the user to the next screen the template waits to receive a response. The following code demonstrate how to send the response
+
+return jsonify({'message': 'Received'}), 200
+main.html (at route /)
+When there is a GET Request to /
+When a get request is sent to / you should render the main.html template. The template is expecting to receive a single parameter.
+
+Expected parameter when rendering main.html
+player_board = This should be the same representation of the players board that you have used throughout the CA. (2D array/List of lists)
+
+Before sending the board you should place the ships based on the configuration received by the /placement POST request.
+
+HINT: to do this you may want to save the players board in a global variable, similar to how you used players in the multiplayer section
+
+How to render the template with parameters
+This code renders the template and passes some example parameter Note: You should change these parameters
+
+Example Board Parameter: [[None,None,None],["SHIP","SHIP","SHIP"],[None,None,None]]
+
+ return render_template('main.html', player_board=INITIALISED_PLAYER_BOARD)
+Route /attack
+When there is a GET Request to /attack
+A GET request to /attack is triggered when the user clicks on the main grid in the main.html screen.
+
+Request Arguments
+When the GET request is sent to /attack there will be two get parameters
+
+x = The X coordinate the user has clicked
+
+y = The Y coordinate the user has clicked
+
+These coordinates represent the players attack against the AI. You should access these coordinates and use them to interact with your game logic. Then return some data back to the template.
+
+How to access the request arguments in \attack
+x = request.args.get('x')
+y = request.args.get('y')
+Responding to the template
+The template expects one of two responses from the /attack route based on whether the game has finished or not.
+
+The game is not finished
+The template expects a JSON response containing: hit = A boolean (true/false) value detailing whether the players coordinated hit an I ship or not. True if it was a hit.
+
+AI_Turn = A tuple (x,y) detailing the AIs turn. This will be rendered on the smaller grid. (note: your x and y may be switched in your game implementation)
+
+The game is finished
+This response should contain the above and an additional value: finished = Some finished message Where the finish message is a string congratulating the user for finishing the game.
+
+Additional information
+Create a function called attack with a Flask decorator to map the attack "/attack" url endpoint. 
+This function should be mapped to the main gameplay template webpage. 
+In this function, you will need to handle request variables to detect if the web request has get variables. 
+If the request contains a coordinate, the user has input their selection for their attack on the AI board and the game logic should be progressed.
+You should return to the user whether their attack hit or missed and also return the attack coordinates that were used by the AI.
+You should also check in this function whether the game has finished, if the game has finished return a message informing the user. 
+The details on how to interact with the flask templates are provided in the "Frontend Documentation" file.
+
+
+
+Example Reponses
+you can use jsonify from the flask package to turn a dictionary into a JSON object
+
+# Example Finished Response
+return jsonify({'hit': True,
+        'AI_Turn': (1,2),
+        'finished': "Game Over Player wins"
+        })
+# Example Not Finished Response
+return jsonify({'hit': True,
+        'AI_Turn': (1,2)
+        })
